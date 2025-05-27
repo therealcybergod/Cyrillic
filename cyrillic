@@ -1,0 +1,99 @@
+from pathlib import Path
+
+# Updated script with tool name "CYRILLIC" and dark blue coloring
+script = '''\
+#!/usr/bin/env python3
+import unicodedata
+import os
+
+CYRILLIC_SUBS = {
+    'a': 'а',  # Cyrillic a
+    'e': 'е',  # Cyrillic e
+    'o': 'о',  # Cyrillic o
+    'c': 'с',  # Cyrillic c
+    'p': 'р',  # Cyrillic p
+    'x': 'х',  # Cyrillic x
+    'y': 'у',  # Cyrillic y
+    'b': 'Ь',  # Cyrillic soft sign (similar to b)
+}
+
+NORMAL_CHARS = ['a', 'e', 'o', 'c', 'p', 'x', 'y', 'b']
+
+def banner():
+    print("\\033[34m")  # Dark blue
+    print(" ██████╗██╗   ██╗██████╗ ██╗██████╗ ██╗██╗     ██╗ ██████╗ ")
+    print("██╔════╝██║   ██║██╔══██╗██║██╔══██╗██║██║     ██║██╔════╝ ")
+    print("██║     ██║   ██║██████╔╝██║██║  ██║██║██║     ██║██║  ███╗")
+    print("██║     ██║   ██║██╔═══╝ ██║██║  ██║██║██║     ██║██║   ██║")
+    print("╚██████╗╚██████╔╝██║     ██║██████╔╝██║███████╗██║╚██████╔╝")
+    print(" ╚═════╝ ╚═════╝ ╚═╝     ╚═╝╚═════╝ ╚═╝╚══════╝╚═╝ ╚═════╝ ")
+    print("\\033[94m")
+    print("Cyrillic Email Spoofer & Detector")
+    print("Created by: YourName | For Educational & OSINT Awareness Use Only\\n")
+    print("\\033[0m")
+
+def spoof_email():
+    email = input("Enter an email to spoof: ").strip()
+    if '@' not in email:
+        print("Invalid email.")
+        return
+    username, domain = email.split('@')
+    spoofed = ''
+    for ch in username:
+        spoofed += CYRILLIC_SUBS.get(ch.lower(), ch)
+    spoofed_email = f"{spoofed}@{domain}"
+    print(f"\\n🔁 Spoofed Email: {spoofed_email}\\n")
+
+def detect_email():
+    email = input("Enter an email to inspect: ").strip()
+    print("\\n🔎 Inspecting email for non-ASCII or Cyrillic characters...")
+    found = False
+    for i, ch in enumerate(email):
+        if ord(ch) > 127:
+            found = True
+            name = unicodedata.name(ch, "UNKNOWN")
+            print(f" [!] Position {i}: '{ch}' → {name}")
+    if not found:
+        print("✅ No suspicious Unicode characters detected.")
+
+def show_unicode_table():
+    print("\\n🧾 Unicode Comparison Table:")
+    print("{:<10} {:<12} {:<10} {:<12}".format("Latin", "Unicode", "Cyrillic", "Unicode"))
+    print("-" * 46)
+    for latin in NORMAL_CHARS:
+        cyr = CYRILLIC_SUBS[latin]
+        print("{:<10} U+{:04X}     {:<10} U+{:04X}".format(
+            latin, ord(latin), cyr, ord(cyr)
+        ))
+
+def main():
+    banner()
+    while True:
+        print("Choose an option:")
+        print("[1] Spoof email")
+        print("[2] Detect spoofing in email")
+        print("[3] Show Unicode comparison table")
+        print("[4] Exit")
+        choice = input("Enter your choice: ").strip()
+        if choice == '1':
+            spoof_email()
+        elif choice == '2':
+            detect_email()
+        elif choice == '3':
+            show_unicode_table()
+        elif choice == '4':
+            print("Goodbye!")
+            break
+        else:
+            print("Invalid choice. Try again.")
+
+if __name__ == "__main__":
+    main()
+'''
+
+# Save to "cyrillic.py"
+path = Path("cyrillic.py")
+path.write_text(script)
+path.chmod(0o755)
+
+path.name  # Return file name
