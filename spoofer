@@ -1,0 +1,128 @@
+#!/usr/bin/env python3
+
+import unicodedata
+import re
+import sys
+from termcolor import colored
+from tabulate import tabulate
+
+# Banner (block ASCII art style for "CYRILLIC")
+banner = """
+   ██████╗ ██╗   ██╗██████╗ ██████╗ ██╗██╗     ██╗ ██████╗ 
+  ██╔════╝ ██║   ██║██╔══██╗██╔══██╗██║██║     ██║██╔═══██╗
+  ██║  ███╗██║   ██║██████╔╝██████╔╝██║██║     ██║██║   ██║
+  ██║   ██║██║   ██║██╔═══╝ ██╔═══╝ ██║██║     ██║██║   ██║
+  ╚██████╔╝╚██████╔╝██║     ██║     ██║███████╗██║╚██████╔╝
+   ╚═════╝  ╚═════╝ ╚═╝     ╚═╝     ╚═╝╚══════╝╚═╝ ╚═════╝ 
+                                                          
+              Created by George Ragsdale, 2025
+"""
+
+print(colored(banner, "blue"))
+
+# Spoof mappings for homoglyphs across different alphabets and styles
+spoof_map = {
+    # Latin base -> variants in Cyrillic, Greek, Armenian, IPA, Mathematical alphanumeric symbols, Fullwidth Latin, etc.
+    "a": ["а", "ɑ", "α", "Ա", "æ", "ａ", "𝖺", "𝓪", "𝔞"],
+    "b": ["Ь", "β", "Բ", "Ꮟ", "ｂ", "𝖻", "𝓫", "𝔟"],
+    "c": ["ϲ", "с", "ƈ", "ҫ", "ս", "ｃ", "𝖼", "𝓬", "𝔠"],
+    "d": ["ԁ", "ժ", "ｄ", "𝖽", "𝓭", "𝔡"],
+    "e": ["е", "ҽ", "℮", "ｅ", "𝖾", "𝓮", "𝔢"],
+    "f": ["ғ", "ƒ", "ｆ", "𝖿", "𝓯", "𝔣"],
+    "g": ["ɡ", "ց", "ｇ", "𝗀", "𝓰", "𝔤"],
+    "h": ["һ", "հ", "ｈ", "𝗁", "𝓱", "𝔥"],
+    "i": ["і", "ɩ", "ι", "ｉ", "𝗂", "𝓲", "𝔦"],
+    "j": ["ј", "ϳ", "ｊ", "𝗃", "𝓳", "𝔧"],
+    "k": ["κ", "ᴋ", "ｋ", "𝗄", "𝓴", "𝔨"],
+    "l": ["ⅼ", "ӏ", "ｌ", "𝗅", "𝓵", "𝔩"],
+    "m": ["м", "ᴍ", "ｍ", "𝗆", "𝓶", "𝔪"],
+    "n": ["п", "ո", "ｎ", "𝗇", "𝓷", "𝔫"],
+    "o": ["о", "օ", "σ", "ｏ", "𝗈", "𝓸", "𝔬"],
+    "p": ["р", "ρ", "ք", "ｐ", "𝗉", "𝓹", "𝔭"],
+    "q": ["գ", "ԛ", "ｑ", "𝗊", "𝓺", "𝔮"],
+    "r": ["г", "ᴦ", "ｒ", "𝗋", "𝓻", "𝔯"],
+    "s": ["ѕ", "ꜱ", "ｓ", "𝗌", "𝓼", "𝔰"],
+    "t": ["т", "τ", "ｔ", "𝗍", "𝓽", "𝔱"],
+    "u": ["υ", "ս", "ᴜ", "ｕ", "𝗎", "𝓾", "𝔲"],
+    "v": ["ѵ", "ν", "ᴠ", "ｖ", "𝗏", "𝓿", "𝔳"],
+    "w": ["ѡ", "ԝ", "ա", "ｗ", "𝗐", "𝔀", "𝔴"],
+    "x": ["х", "ⅹ", "ｘ", "𝗑", "𝔁", "𝔵"],
+    "y": ["у", "ყ", "ｙ", "𝗒", "𝔂", "𝔶"],
+    "z": ["ᴢ", "ｚ", "𝗓", "𝔃", "𝔷"],
+}
+
+def spoof_username(email):
+    try:
+        name, domain = email.split("@")
+    except ValueError:
+        print("Invalid email format. Please include an '@' symbol.")
+        return
+    print("\n[+] Generating spoofed variants of username...\n")
+    spoofed = set()
+
+    for i in range(len(name)):
+        char = name[i].lower()
+        if char in spoof_map:
+            for variant in spoof_map[char]:
+                spoofed_name = name[:i] + variant + name[i + 1:]
+                spoofed.add(f"{spoofed_name}@{domain}")
+
+    if spoofed:
+        for variant in sorted(spoofed):
+            print(variant)
+    else:
+        print("No spoof variants found for the given username.")
+
+def detect_spoofed(email):
+    try:
+        name, _ = email.split("@")
+    except ValueError:
+        print("Invalid email format. Please include an '@' symbol.")
+        return
+
+    print("\n[+] Detecting non-ASCII homoglyphs in username...\n")
+    suspicious_chars = [(char, unicodedata.name(char, "UNKNOWN"), f"U+{ord(char):04X}")
+                        for char in name if not char.isascii()]
+    if suspicious_chars:
+        print(tabulate(suspicious_chars, headers=["Char", "Unicode Name", "Code Point"]))
+    else:
+        print("No suspicious Unicode characters found in the username.")
+
+def display_unicode_table():
+    print("\n[+] Unicode Table of Common Homoglyphs\n")
+    table = []
+    for base, variants in sorted(spoof_map.items()):
+        for variant in variants:
+            try:
+                name = unicodedata.name(variant)
+            except ValueError:
+                name = "UNKNOWN"
+            table.append([base, variant, f"U+{ord(variant):04X}", name])
+    print(tabulate(table, headers=["Base Char", "Variant", "Code Point", "Unicode Name"], tablefmt="grid"))
+
+def main():
+    while True:
+        print("\nSelect an option:")
+        print("1) Spoof a username")
+        print("2) Detect Cyrillic/Unicode characters in username")
+        print("3) Show Unicode homoglyph table")
+        print("4) Exit")
+
+        choice = input("Enter choice: ").strip()
+
+        if choice == "1":
+            email = input("Enter email address to spoof: ").strip()
+            spoof_username(email)
+        elif choice == "2":
+            email = input("Enter email address to detect spoofed chars: ").strip()
+            detect_spoofed(email)
+        elif choice == "3":
+            display_unicode_table()
+        elif choice == "4":
+            print("Exiting. Goodbye!")
+            sys.exit(0)
+        else:
+            print("Invalid choice, please try again.")
+
+if __name__ == "__main__":
+    main()
